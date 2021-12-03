@@ -22,30 +22,42 @@ class Diagnostics {
   }
 
   int powerConsumption() {
-    var gammaRateString = "";
-    var epsilonRateString = "";
-    var positiveBitCount = _countPositiveBits(report);
-    var half = report.length ~/ 2;
+    var gammeRate = _rate(report, useMostCommonBits: true);
+    var epsilonRate = _rate(report, useMostCommonBits: false);
 
-    for (var i = 0; i < positiveBitCount.length; i++) {
-      if (positiveBitCount[i] > half) {
-        gammaRateString = gammaRateString + "1";
-        epsilonRateString = epsilonRateString + "0";
+    return gammeRate * epsilonRate;
+  }
+
+  /// Prepare an abstract rating.
+  ///
+  /// useMostCommonBits Specifies if the most or least common bits should be selected.
+  static int _rate(List<String> data, {bool useMostCommonBits}) {
+    var reportNumberLength = data.first.length;
+    List<String> candidates = List.from(data);
+    String rateString = "";
+
+    for (var i = 0; i < reportNumberLength; i++) {
+      var positiveBitCount = _countPositiveBits(candidates);
+      var half = candidates.length / 2;
+      var hasMoreOnes = positiveBitCount[i] >= half;
+      var selectedBit;
+      if (hasMoreOnes) {
+        selectedBit = useMostCommonBits ? '1' : '0';
       } else {
-        gammaRateString = gammaRateString + "0";
-        epsilonRateString = epsilonRateString + "1";
+        selectedBit = useMostCommonBits ? '0' : '1';
       }
+
+      // Action (accumulator?)
+      rateString = rateString + selectedBit;
+
+      // Filtering is ignored here.
+
+      // Stop condition is ignored here.
     }
 
-    var gammaRate = int.parse(gammaRateString, radix: 2);
-    var epsilonRate = int.parse(epsilonRateString, radix: 2);
+    var rate = int.parse(rateString, radix: 2);
 
-    print("Gamma rate string: $gammaRateString");
-    print("Gamme rate decimal: $gammaRate");
-    print("Epsilon rate string: $epsilonRateString");
-    print("Epsilon rate decimal: $epsilonRate");
-
-    return gammaRate * epsilonRate;
+    return rate;
   }
 
   int oxygeneGeneratorRating() {
@@ -132,6 +144,6 @@ void main() {
   var powerConsumption = diagnostics.powerConsumption();
   print("===> Power consumption: $powerConsumption");
 
-  print("===> Start Life support rating");
-  print("===> Life support rating: ${diagnostics.lifeSupportRating()}");
+  // print("===> Start Life support rating");
+  // print("===> Life support rating: ${diagnostics.lifeSupportRating()}");
 }
