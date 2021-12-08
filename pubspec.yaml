@@ -1,0 +1,4 @@
+name: adventofcode
+
+dependencies:
+  collection: any
