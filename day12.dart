@@ -46,10 +46,20 @@ bool isSmallAndVisited(String caveName, List<String> pathUntilNow) {
   return caveName == caveName.toLowerCase() && pathUntilNow.contains(caveName);
 }
 
+bool hasMultipleSmallCavesVisitedTwice(
+    String caveName, List<String> pathUntilNow) {
+  var pathWithNewCave = List.from(pathUntilNow)..add(caveName);
+  var smallsList = pathWithNewCave.where((p) => p == p.toLowerCase());
+  var smallsSet = smallsList.toSet();
+
+  return smallsList.length - smallsSet.length > 1;
+}
+
 List<List<String>> findPathToEnd(
   List<String> pathUntilNow,
   List<String> caveList,
   List<List<int>> caveConnections,
+  bool Function(String, List<String>) isInvalidC,
 ) {
   // Get adjacent caves
   var lastCaveIndex = caveList.indexOf(pathUntilNow.last);
@@ -62,40 +72,45 @@ List<List<String>> findPathToEnd(
     // A connection is only there if matrix holds 1 at our position.
     if (connections[maybeConnIdx] == 1) {
       var connName = caveList[maybeConnIdx];
+
       if (connName == "end") {
         // Path finished!
         pathsFound.add(["end"]);
-      } else if (!isSmallAndVisited(connName, pathUntilNow)) {
+      } else if (connName != "start" && !isInvalidC(connName, pathUntilNow)) {
         // Path continues
         var newUntilNow = List<String>.from(pathUntilNow)..add(connName);
-        var subPaths = findPathToEnd(newUntilNow, caveList, caveConnections);
+        var subPaths =
+            findPathToEnd(newUntilNow, caveList, caveConnections, isInvalidC);
         pathsFound.addAll(subPaths.map((p) => p..insert(0, connName)));
       }
     }
   }
-  // Chheck if they're finishers (start, end, visited small cave)
-  //   If end -> add "end" and return
-  //    else -> return null, so that the path can be discarded (illegal path)
-
-  // For all non-finisher neighbours, go deeper
-  // When they return a non-null path, multiply path until now with returned possibilities.
-  // When they return null, return null yourself.
 
   return pathsFound;
 }
 
-List<String> findAllPaths(
+List<String> findAllPathsVisitingSmallOnce(
   List<String> caveList,
   List<List<int>> caveConnections,
 ) {
-  var paths = findPathToEnd(["start"], caveList, caveConnections)
+  var paths =
+      findPathToEnd(["start"], caveList, caveConnections, isSmallAndVisited)
+          .map((path) => path..insert(0, "start"))
+          .toList();
+
+  return paths.map((p) => p.join(",")).toList();
+}
+
+List<String> findAllPathsVisitingSingleSmallTwice(
+  List<String> caveList,
+  List<List<int>> caveConnections,
+) {
+  var paths = findPathToEnd(["start"], caveList, caveConnections,
+          hasMultipleSmallCavesVisitedTwice)
       .map((path) => path..insert(0, "start"))
       .toList();
 
-  // WARNING: Paths may be corrupted (ie. not ending with "end").
-
-  // Join paths with ","
-  return paths.map((p) => p.join(",")).toList();
+  return paths.map((p) => p.join(",")).toSet().toList();
 }
 
 void main() {
@@ -109,11 +124,17 @@ void main() {
     print("Connections:");
     printArray(caveConnections);
 
-    var paths = findAllPaths(caveList, caveConnections);
-
+    var paths = findAllPathsVisitingSmallOnce(caveList, caveConnections);
     print("");
-    print("${paths.length} Paths:");
-    print("$paths");
+    print("${paths.length} paths with small caves visited only once");
+    // print("$paths");
+
+    var morePaths =
+        findAllPathsVisitingSingleSmallTwice(caveList, caveConnections);
+    print("");
+    print(
+        "${morePaths.length} paths with a single small cave visited at most twice");
+    // print("$morePaths");
   };
 
   print("");
